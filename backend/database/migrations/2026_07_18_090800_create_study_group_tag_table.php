@@ -12,11 +12,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('study_group_tag', function (Blueprint $table) {
-            $table->ulid('id')->primary();
+            $table->foreignUlid('study_group_id')
+                ->constrained()
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
 
-            $table->string('name')->unique();
+            $table->foreignUlid('tag_id')
+                ->constrained()
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
 
-            $table->timestamps();
+            $table->primary([
+                'study_group_id',
+                'tag_id',
+            ]);
         });
     }
 

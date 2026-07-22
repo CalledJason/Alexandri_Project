@@ -12,8 +12,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('study_group_members', function (Blueprint $table) {
-            $table->id();
+
+            $table->ulid('id')->primary();
+            $table->foreignUlid('study_group_id')
+                ->constrained()
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+
+            $table->foreignUlid('user_id')
+                ->constrained()
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+            
+            $table->enum('role', [
+                'owner',
+                'member',
+            ])->default('member');
+
+            $table->timestamp('joined_at');
             $table->timestamps();
+
+            $table->unique([
+                'study_group_id',
+                'user_id',
+            ]);
+
         });
     }
 
