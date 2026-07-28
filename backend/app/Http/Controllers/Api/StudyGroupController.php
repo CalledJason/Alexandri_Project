@@ -24,13 +24,38 @@ class StudyGroupController extends Controller
     /**
      * Menampilkan seluruh study group.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', StudyGroup::class);
 
-        $studyGroups = StudyGroup::query()
-            ->latest()
-            ->paginate(10);
+        $query = StudyGroup::query()
+            ->withCount('members')
+            ->with('tags');
+
+        if ($request->has('owner_id') && !empty($request->query('owner_id'))) {
+            $query->where('owner_id', $request->query('owner_id'));
+        }
+
+        if ($request->has('category_id') && !empty($request->query('category_id'))) {
+            $tagId = $request->query('category_id');
+            $query->whereHas('tags', function ($tagQuery) use ($tagId) {
+                $tagQuery->where('tags.id', $tagId);
+            });
+        }
+
+        if ($request->has('search') && !empty($request->query('search'))) {
+            $search = trim($request->query('search'));
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhereHas('tags', function ($tagQuery) use ($search) {
+                      $tagQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $studyGroups = $query->latest()->paginate(10);
 
         return response()->json($studyGroups);
     }
@@ -43,6 +68,9 @@ class StudyGroupController extends Controller
     ): JsonResponse {
 
         $this->authorize('view', $studyGroup);
+        
+        $studyGroup->loadCount('members');
+        $studyGroup->load('tags', 'owner');
 
         return response()->json($studyGroup);
     }

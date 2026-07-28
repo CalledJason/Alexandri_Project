@@ -17,6 +17,40 @@ use App\Http\Controllers\Api\NotificationController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::get('/universities', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\University::query()->with('majors');
+    if ($request->has('domain') && !empty($request->query('domain'))) {
+        $domain = trim($request->query('domain'));
+        $query->where('domain', 'like', "%{$domain}%");
+    }
+    return response()->json($query->get());
+});
+Route::get('/majors', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Major::query()->with('university');
+    if ($request->has('university_id') && !empty($request->query('university_id'))) {
+        $query->where('university_id', $request->query('university_id'));
+    }
+    if ($request->has('domain') && !empty($request->query('domain'))) {
+        $domain = trim($request->query('domain'));
+        $query->whereHas('university', function ($q) use ($domain) {
+            $q->where('domain', 'like', "%{$domain}%");
+        });
+    }
+    return response()->json($query->get());
+});
+Route::get('/tags', function () {
+    return response()->json(\App\Models\Tag::all());
+});
+Route::get('/stats', function () {
+    return response()->json([
+        'active_groups_count' => \App\Models\StudyGroup::count(),
+        'universities_count' => \App\Models\University::count(),
+        'total_members_count' => \App\Models\StudyGroupMember::count() ?: \App\Models\User::count(),
+        'tags_count' => \App\Models\Tag::count(),
+    ]);
+});
+Route::get('/study-groups', [StudyGroupController::class, 'index']);
+Route::get('/study-groups/{studyGroup}', [StudyGroupController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -39,7 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('study-groups', StudyGroupController::class);
+    Route::post('/study-groups', [StudyGroupController::class, 'store']);
+    Route::put('/study-groups/{studyGroup}', [StudyGroupController::class, 'update']);
+    Route::delete('/study-groups/{studyGroup}', [StudyGroupController::class, 'destroy']);
 
     Route::patch(
         'study-groups/{studyGroup}/start',
@@ -61,6 +97,16 @@ Route::middleware('auth:sanctum')->group(function () {
     | Join Requests
     |--------------------------------------------------------------------------
     */
+
+    Route::get(
+        'my-requests',
+        [JoinRequestController::class, 'myRequests']
+    );
+
+    Route::get(
+        'study-groups/{studyGroup}/requests',
+        [JoinRequestController::class, 'groupRequests']
+    );
 
     Route::post(
         'study-groups/{studyGroup}/join',

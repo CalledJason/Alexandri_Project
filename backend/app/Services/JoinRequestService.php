@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\JoinRequest;
 use App\Models\StudyGroup;
+use App\Models\StudyGroupMember;
 use App\Models\User;
 
 use App\Enums\JoinRequestStatus;
@@ -100,12 +101,12 @@ class JoinRequestService
             }
 
             // Tambahkan sebagai member
-            $studyGroup->members()->attach(
-                $joinRequest->user_id, [
-                    'role' => MemberRole::MEMBER,
-                    'joined_at' => now(),
-                ]
-            );
+            StudyGroupMember::create([
+                'study_group_id' => $studyGroup->id,
+                'user_id' => $joinRequest->user_id,
+                'role' => MemberRole::MEMBER,
+                'joined_at' => now(),
+            ]);
 
             // Notifikasi user if approve
             $this->notificationService->send(

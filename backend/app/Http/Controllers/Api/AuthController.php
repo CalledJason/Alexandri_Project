@@ -80,7 +80,7 @@ class AuthController extends Controller
     ): JsonResponse {
 
         return response()->json(
-            $request->user()
+            $request->user()->load(['university', 'major'])
         );
     }
 

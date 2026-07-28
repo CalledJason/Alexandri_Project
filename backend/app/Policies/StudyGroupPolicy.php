@@ -11,7 +11,7 @@ class StudyGroupPolicy
     /**
      * Determine whether the user can view any models.
      */
-    public function viewAny(User $user): bool
+    public function viewAny(?User $user): bool
     {
         return true;
     }
@@ -19,7 +19,7 @@ class StudyGroupPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, StudyGroup $studyGroup): bool
+    public function view(?User $user, StudyGroup $studyGroup): bool
     {
         return true;
     }
@@ -37,7 +37,7 @@ class StudyGroupPolicy
      */
     public function update(User $user, StudyGroup $studyGroup): bool
     {
-        return true;
+        return $user->id === $studyGroup->owner_id;
     }
 
     /**
@@ -45,7 +45,7 @@ class StudyGroupPolicy
      */
     public function delete(User $user, StudyGroup $studyGroup): bool
     {
-        return true;
+        return $user->id === $studyGroup->owner_id;
     }
 
     /**

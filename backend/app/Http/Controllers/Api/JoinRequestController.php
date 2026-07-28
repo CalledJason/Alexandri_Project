@@ -14,6 +14,27 @@ class JoinRequestController extends Controller
     public function __construct(protected JoinRequestService $joinRequestService,) {}
 
     /**
+     * Get user's join requests.
+     */
+    public function myRequests(Request $request): JsonResponse
+    {
+        $requests = JoinRequest::with('studyGroup')->where('user_id', $request->user()->id)->get();
+        return response()->json($requests);
+    }
+
+    /**
+     * Get join requests for a specific group.
+     */
+    public function groupRequests(Request $request, StudyGroup $studyGroup): JsonResponse
+    {
+        if ($request->user()->id !== $studyGroup->owner_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $requests = $studyGroup->joinRequests()->with('user')->get();
+        return response()->json($requests);
+    }
+
+    /**
      * User mengirim permintaan bergabung.
      */
     public function requestJoin(

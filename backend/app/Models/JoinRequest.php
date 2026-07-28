@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Enums\JoinRequestStatus;
 
 class JoinRequest extends Model
 {
@@ -23,6 +24,7 @@ class JoinRequest extends Model
     {
         return [
             'responded_at' => 'datetime',
+            'status' => JoinRequestStatus::class,
         ];
     }
 

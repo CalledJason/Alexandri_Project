@@ -66,20 +66,28 @@ class StudyGroupService
         if ($studyGroup->status !== StudyGroupStatus::OPEN){
             throw new \Exception('Only open study groups can be updated.');
         }
-        $studyGroup->update([
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'location' => $data['location'],
-            'meeting_time' => $data['meeting_time'],
-            'max_members' => $data['max_members'],
-            'visibility' => $data['visibility'],
-            'expires_at' => $data['expires_at'],
-            'status' => StudyGroupStatus::OPEN->value,
-        ]);
+        
+        $updateData = array_filter([
+            'title' => $data['title'] ?? null,
+            'description' => $data['description'] ?? null,
+            'location' => $data['location'] ?? null,
+            'meeting_time' => $data['meeting_time'] ?? null,
+            'max_members' => $data['max_members'] ?? null,
+            'visibility' => $data['visibility'] ?? null,
+            'whatsapp_link' => $data['whatsapp_link'] ?? null,
+            'expires_at' => $data['expires_at'] ?? null,
+        ], fn($value) => !is_null($value));
+
+        $studyGroup->update($updateData);
+
+        if (isset($data['tags'])) {
+            $studyGroup->tags()->sync($data['tags']);
+        }
 
         return $studyGroup->fresh([
             'owner',
             'members',
+            'tags',
         ]);
     }
 
@@ -191,5 +199,18 @@ class StudyGroupService
             ]);
         });
     }
-    
+
+    /**
+     * Menghapus study group.
+     */
+    public function delete(
+        StudyGroup $studyGroup,
+    ): void {
+        DB::transaction(function () use ($studyGroup) {
+            $studyGroup->joinRequests()->delete();
+            $studyGroup->memberRecords()->delete();
+            $studyGroup->tags()->detach();
+            $studyGroup->delete();
+        });
+    }
 }
