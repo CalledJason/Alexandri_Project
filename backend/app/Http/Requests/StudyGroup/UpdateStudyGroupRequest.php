@@ -72,6 +72,13 @@ class UpdateStudyGroupRequest extends FormRequest
                 'max:5',
             ],
 
+            'whatsapp_link' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'url',
+            ],
+
             'expires_at' => [
                 'sometimes',
                 'date',

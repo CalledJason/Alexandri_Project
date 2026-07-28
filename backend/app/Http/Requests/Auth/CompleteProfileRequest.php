@@ -24,12 +24,14 @@ class CompleteProfileRequest extends FormRequest
     {
         return [
             'major_id' => [
-            'required',
-            'exists:majors,id',
+                'required',
+                'exists:majors,id',
             ],
 
             'student_id' => [
                 'required',
+                'string',
+                'min:3',
                 'max:30',
                 'unique:users,student_id,' . $this->user()->id,
             ],

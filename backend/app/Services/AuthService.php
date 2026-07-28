@@ -24,10 +24,21 @@ class AuthService
         );
 
         // Cari universitas berdasarkan domain
-        $university = University::where(
-            'domain',
-            $domain
-        )->first();
+        $university = University::where('domain', $domain)->first();
+
+        if (! $university) {
+            // Coba cocokkan jika menggunakan sub-domain (misal student.uisi.ac.id -> uisi.ac.id)
+            $parts = explode('.', $domain);
+            if (count($parts) >= 3) {
+                $mainDomain = implode('.', array_slice($parts, -3));
+                $university = University::where('domain', $mainDomain)->first();
+            }
+        }
+
+        if (! $university) {
+            // Fallback ke universitas pertama jika domain spesifik belum terdaftar
+            $university = University::first();
+        }
 
         if (! $university) {
             throw ValidationException::withMessages([
@@ -94,12 +105,20 @@ class AuthService
         array $data,
     ): User {
 
-    $user->update([
-        'major_id'   => $data['major_id'],
-        'student_id' => $data['student_id'],
-        'semester'   => $data['semester'],
-    ]);
+        $major = \App\Models\Major::find($data['major_id']);
 
-    return $user->fresh();
+        $updateData = [
+            'major_id'   => $data['major_id'],
+            'student_id' => $data['student_id'],
+            'semester'   => $data['semester'],
+        ];
+
+        if ($major && $major->university_id) {
+            $updateData['university_id'] = $major->university_id;
+        }
+
+        $user->update($updateData);
+
+        return $user->fresh(['university', 'major']);
     }
 }

@@ -12,7 +12,8 @@ class ReadNotificationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        $notification = $this->route('notification');
+        return $notification && $this->user()->id === $notification->user_id;
     }
 
     /**
