@@ -20,7 +20,11 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('user', JSON.stringify(res.data));
           
           if (!echoInstance) {
-            setEchoInstance(createEcho(token));
+            try {
+              setEchoInstance(createEcho(token));
+            } catch (echoErr) {
+              console.warn("Echo initialization error:", echoErr);
+            }
           }
         } catch (error) {
           console.error("Token invalid", error);
@@ -50,7 +54,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     
-    setEchoInstance(createEcho(token));
+    try {
+      setEchoInstance(createEcho(token));
+    } catch (echoErr) {
+      console.warn("Echo initialization error:", echoErr);
+    }
     
     return userData;
   };

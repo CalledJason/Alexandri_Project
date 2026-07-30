@@ -12,7 +12,7 @@ export const createEcho = (token) => {
         wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
         forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
         enabledTransports: ['ws', 'wss'],
-        authEndpoint: import.meta.env.VITE_API_URL + '/api/broadcasting/auth',
+        authEndpoint: (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace(/\/api\/?$/, '') + '/api/broadcasting/auth',
         auth: {
             headers: {
                 Authorization: `Bearer ${token}`
