@@ -56,8 +56,8 @@ class StoreStudyGroupRequest extends FormRequest
             ],
 
             'visibility' => [
-                'required',
-                new Enum(Visibility::class),
+                'sometimes',
+                'nullable',
             ],
 
             'expires_at' => [
@@ -81,6 +81,26 @@ class StoreStudyGroupRequest extends FormRequest
             'tags.*' => [
                 'exists:tags,id',
             ],
+        ];
+    }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Judul study group wajib diisi.',
+            'title.max' => 'Judul study group maksimal 100 karakter.',
+            'description.required' => 'Deskripsi study group wajib diisi.',
+            'description.max' => 'Deskripsi study group maksimal 1000 karakter.',
+            'location.required' => 'Lokasi atau link tempat belajar wajib diisi.',
+            'meeting_time.required' => 'Waktu pertemuan wajib ditentukan.',
+            'meeting_time.after' => 'Waktu pertemuan harus di masa depan.',
+            'max_members.required' => 'Jumlah anggota maksimal wajib diisi.',
+            'max_members.between' => 'Kapasitas anggota harus antara 2 hingga 20 mahasiswa.',
+            'expires_at.required' => 'Batas akhir pendaftaran wajib ditentukan.',
+            'expires_at.after' => 'Batas akhir pendaftaran harus setelah waktu pertemuan.',
         ];
     }
 }

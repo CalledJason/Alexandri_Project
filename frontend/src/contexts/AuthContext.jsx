@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
+import { createEcho } from '../utils/echo';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [echoInstance, setEchoInstance] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -16,11 +18,19 @@ export const AuthProvider = ({ children }) => {
           const res = await api.get('/me');
           setUser(res.data);
           localStorage.setItem('user', JSON.stringify(res.data));
+          
+          if (!echoInstance) {
+            setEchoInstance(createEcho(token));
+          }
         } catch (error) {
           console.error("Token invalid", error);
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
           setUser(null);
+          if (echoInstance) {
+            echoInstance.disconnect();
+            setEchoInstance(null);
+          }
         }
       }
       setLoading(false);
@@ -39,6 +49,9 @@ export const AuthProvider = ({ children }) => {
     const userData = userRes.data;
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    
+    setEchoInstance(createEcho(token));
+    
     return userData;
   };
 
@@ -57,6 +70,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       setUser(null);
+      if (echoInstance) {
+        echoInstance.disconnect();
+        setEchoInstance(null);
+      }
     }
   };
 
@@ -73,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading, echo: echoInstance }}>
       {!loading && children}
     </AuthContext.Provider>
   );

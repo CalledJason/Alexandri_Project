@@ -43,4 +43,21 @@ class RegisterRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email kampus wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.ends_with' => 'Email harus menggunakan domain resmi perguruan tinggi di Indonesia (.ac.id).',
+            'email.unique' => 'Email ini sudah terdaftar. Silakan login atau gunakan email lain.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+            'password.min' => 'Kata sandi minimal 8 karakter.',
+        ];
+    }
 }

@@ -70,7 +70,13 @@ class StudyGroupController extends Controller
         $this->authorize('view', $studyGroup);
         
         $studyGroup->loadCount('members');
-        $studyGroup->load('tags', 'owner');
+        $studyGroup->load([
+            'tags',
+            'owner.university',
+            'owner.major',
+            'members.university',
+            'members.major',
+        ]);
 
         return response()->json($studyGroup);
     }

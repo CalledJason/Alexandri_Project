@@ -1,0 +1,14 @@
+{
+  "The email field is required.": "Email wajib diisi.",
+  "The password field is required.": "Kata sandi wajib diisi.",
+  "The name field is required.": "Nama lengkap wajib diisi.",
+  "The email must be a valid email address.": "Format alamat email tidak valid.",
+  "The email has already been taken.": "Email ini sudah terdaftar. Silakan login atau gunakan email lain.",
+  "The password field must be at least 8 characters.": "Kata sandi minimal 8 karakter.",
+  "The password confirmation does not match.": "Konfirmasi kata sandi tidak cocok.",
+  "Invalid credentials.": "Email atau kata sandi yang Anda masukkan salah.",
+  "Email domain is not registered.": "Domain email kampus belum terdaftar di sistem.",
+  "Unauthorized": "Anda tidak memiliki hak akses.",
+  "Unauthenticated.": "Silakan login terlebih dahulu untuk mengakses fitur ini.",
+  "Too Many Requests": "Terlalu banyak permintaan. Silakan coba beberapa saat lagi."
+}

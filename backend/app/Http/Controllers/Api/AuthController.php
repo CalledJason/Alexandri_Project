@@ -80,7 +80,7 @@ class AuthController extends Controller
     ): JsonResponse {
 
         return response()->json(
-            $request->user()->load(['university', 'major'])
+            $request->user()->load(['university', 'major.tags'])
         );
     }
 
@@ -100,7 +100,7 @@ class AuthController extends Controller
         'message' => 'Profile completed successfully.',
         'data' => $user->load([
             'university',
-            'major',
+            'major.tags',
         ]),
     ]);
     }

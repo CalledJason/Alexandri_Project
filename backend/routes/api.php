@@ -13,6 +13,9 @@ use App\Http\Controllers\Api\NotificationController;
 | Authentication
 |--------------------------------------------------------------------------
 */
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -38,8 +41,15 @@ Route::get('/majors', function (\Illuminate\Http\Request $request) {
     }
     return response()->json($query->get());
 });
-Route::get('/tags', function () {
-    return response()->json(\App\Models\Tag::all());
+Route::get('/tags', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Tag::query();
+    if ($request->has('major_id') && !empty($request->query('major_id'))) {
+        $majorId = $request->query('major_id');
+        $query->whereHas('majors', function ($q) use ($majorId) {
+            $q->where('majors.id', $majorId);
+        });
+    }
+    return response()->json($query->get());
 });
 Route::get('/stats', function () {
     return response()->json([
@@ -128,6 +138,16 @@ Route::middleware('auth:sanctum')->group(function () {
         [JoinRequestController::class, 'cancel']
     );
 
+    Route::post(
+        'study-groups/{studyGroup}/leave',
+        [JoinRequestController::class, 'leaveGroup']
+    );
+
+    Route::delete(
+        'study-groups/{studyGroup}/members/{user}',
+        [JoinRequestController::class, 'removeMember']
+    );
+
     /*
     |--------------------------------------------------------------------------
     | Notifications
@@ -147,5 +167,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch(
         'notifications/read-all',
         [NotificationController::class, 'readAll']
+    );
+
+    Route::delete(
+        'notifications/clear-all',
+        [NotificationController::class, 'deleteAll']
     );
 });

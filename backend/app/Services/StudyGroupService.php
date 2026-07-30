@@ -35,8 +35,8 @@ class StudyGroupService
                 'location'     => $data['location'],
                 'meeting_time' => $data['meeting_time'],
                 'max_members'   => $data['max_members'],
-                'visibility'   => $data['visibility'],
-            'expires_at'   => $data['expires_at'],
+                'visibility'   => $data['visibility'] ?? 'public',
+                'expires_at'   => $data['expires_at'],
             'status' => StudyGroupStatus::OPEN->value,
         ]);
 
@@ -64,7 +64,7 @@ class StudyGroupService
     ): StudyGroup{
 
         if ($studyGroup->status !== StudyGroupStatus::OPEN){
-            throw new \Exception('Only open study groups can be updated.');
+            throw new \Exception('Hanya study group yang dibuka yang dapat diperbarui.');
         }
         
         $updateData = array_filter([
@@ -101,14 +101,14 @@ class StudyGroupService
         return DB::transaction(function () use ($studyGroup, $whatsappLink) {
 
             if ($studyGroup->status !== StudyGroupStatus::OPEN) {
-                throw new \Exception('Study group cannot be started.');
+                throw new \Exception('Study group tidak dapat dimulai.');
             }
 
             if (now()->greaterThan($studyGroup->expires_at)) {
-                throw new \Exception('Study group has expired.');
+                throw new \Exception('Study group sudah melewati batas waktu.');
             }
             if (! $this->whatsAppService->isValidInviteLink($whatsappLink)) {
-                throw new \Exception('Invalid WhatsApp invite link.');
+                throw new \Exception('Tautan undangan WhatsApp tidak valid.');
             }
 
             $studyGroup->update([
@@ -120,7 +120,7 @@ class StudyGroupService
                 $this->notificationService->send(
                     $member,
                     NotificationType::STUDY_STARTED->value,
-                    'Study Group Started',
+                    'Sesi Belajar Dimulai',
                     "Study group \"{$studyGroup->title}\" telah dimulai.",
                     "/study-groups/{$studyGroup->id}"
                 );
@@ -142,7 +142,7 @@ class StudyGroupService
         return DB::transaction(function () use ($studyGroup) {
 
             if ($studyGroup->status !== StudyGroupStatus::ONGOING) {
-                throw new \Exception('Study group is not ongoing.');
+                throw new \Exception('Study group tidak sedang berlangsung.');
             }
 
             $studyGroup->update([
@@ -153,7 +153,7 @@ class StudyGroupService
                 $this->notificationService->send(
                     $member,
                     NotificationType::STUDY_FINISHED->value,
-                    'Study Group Finished',
+                    'Sesi Belajar Selesai',
                     "Study group \"{$studyGroup->title}\" telah selesai.",
                 );
             }
@@ -173,11 +173,11 @@ class StudyGroupService
         return DB::transaction(function () use ($studyGroup) {
 
             if ($studyGroup->status === StudyGroupStatus::FINISHED) {
-                throw new \Exception('Finished study group cannot be cancelled.');
+                throw new \Exception('Study group yang sudah selesai tidak dapat dibatalkan.');
             }
 
             if ($studyGroup->status === StudyGroupStatus::CANCELLED) {
-                throw new \Exception('Study group has already been cancelled.');
+                throw new \Exception('Study group ini sudah dibatalkan sebelumnya.');
             }
 
             $studyGroup->update([
@@ -188,7 +188,7 @@ class StudyGroupService
                 $this->notificationService->send(
                     $member,
                     NotificationType::STUDY_CANCELLED->value,
-                    'Study Group Cancelled',
+                    'Study Group Dibatalkan',
                     "Study group \"{$studyGroup->title}\" telah dibatalkan.",
                 );
             }

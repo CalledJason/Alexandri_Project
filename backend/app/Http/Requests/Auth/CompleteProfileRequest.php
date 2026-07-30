@@ -49,4 +49,22 @@ class CompleteProfileRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'major_id.required' => 'Jurusan / Program studi wajib dipilih.',
+            'major_id.exists' => 'Jurusan yang dipilih tidak ditemukan.',
+            'student_id.required' => 'NIM / NPM wajib diisi.',
+            'student_id.min' => 'NIM / NPM minimal 3 karakter.',
+            'student_id.max' => 'NIM / NPM maksimal 30 karakter.',
+            'student_id.unique' => 'NIM / NPM ini sudah digunakan oleh akun mahasiswa lain.',
+            'semester.required' => 'Semester wajib diisi.',
+            'semester.integer' => 'Semester harus berupa angka.',
+            'semester.between' => 'Semester harus di antara 1 dan 14.',
+        ];
+    }
 }
