@@ -1,21 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, Clock, MapPin, MessageCircle, ExternalLink } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const SchedulePage = () => {
   const { user } = useAuth();
-  const [schedules, setSchedules] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past'
 
-  const fetchSchedules = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch groups where user is owner, and user's requests
+  const { data: schedules = [], isLoading: loading } = useQuery({
+    queryKey: ['schedules', user?.id],
+    queryFn: async () => {
       const [ownedRes, requestsRes] = await Promise.all([
         api.get(`/study-groups?owner_id=${user.id}`),
         api.get('/my-requests')
@@ -40,24 +37,12 @@ const SchedulePage = () => {
       });
 
       const combined = Array.from(groupMap.values());
-
-      // Sort by meeting_time ascending
       combined.sort((a, b) => new Date(a.meeting_time) - new Date(b.meeting_time));
-
-      setSchedules(combined);
-    } catch (error) {
-      console.error(error);
-      toast.error('Gagal mengambil data jadwal');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchSchedules();
-    }
-  }, [user]);
+      
+      return combined;
+    },
+    enabled: !!user?.id
+  });
 
   const now = new Date();
   

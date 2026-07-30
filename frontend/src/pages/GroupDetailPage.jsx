@@ -5,69 +5,96 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { 
   Users, MapPin, Calendar, ArrowLeft, ShieldCheck, 
-  MessageCircle, UserCheck, BookOpen,
-  CheckCircle2, AlertCircle, Edit3, ExternalLink
+  MessageCircle, UserCheck, BookOpen, GraduationCap, Building2,
+  CheckCircle2, AlertCircle, Edit3, ExternalLink, UserPlus, UserX, LogOut
 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
+import Skeleton from '../components/ui/Skeleton';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 const GroupDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [group, setGroup] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [requestStatus, setRequestStatus] = useState(null); // 'none', 'pending', 'approved', 'rejected'
-  const [isRequesting, setIsRequesting] = useState(false);
-
-  // Owner WhatsApp Modal State
   const [showWaModal, setShowWaModal] = useState(false);
+  const [showConfirmLeaveModal, setShowConfirmLeaveModal] = useState(false);
+  const [confirmRemoveMemberData, setConfirmRemoveMemberData] = useState({ isOpen: false, memberId: null, memberName: '' });
   const [waLinkInput, setWaLinkInput] = useState('');
-  const [isSavingWa, setIsSavingWa] = useState(false);
 
-  const fetchGroupDetails = async () => {
-    try {
+  const queryClient = useQueryClient();
+
+  const { data: group, isLoading: loading } = useQuery({
+    queryKey: ['group', id],
+    queryFn: async () => {
       const res = await api.get(`/study-groups/${id}`);
-      setGroup(res.data);
-      if (res.data.whatsapp_link) {
-        setWaLinkInput(res.data.whatsapp_link);
-      }
-    } catch {
-      toast.error('Gagal mengambil data grup');
-      navigate('/');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.data;
+    },
+  });
 
-  const checkRequestStatus = async () => {
-    try {
+  const { data: requestStatusData } = useQuery({
+    queryKey: ['myRequests', id],
+    queryFn: async () => {
+      if (!user) return { status: 'none', whatsapp_link: null };
       const res = await api.get('/my-requests');
       const request = res.data.find(req => req.study_group_id === id);
       if (request) {
-        setRequestStatus(request.status);
-        if (request.status === 'approved' && request.study_group?.whatsapp_link) {
-          setGroup(prev => ({ ...prev, whatsapp_link: request.study_group.whatsapp_link }));
-        }
-      } else {
-        setRequestStatus('none');
+        return { 
+          status: request.status, 
+          whatsapp_link: request.study_group?.whatsapp_link || null 
+        };
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      return { status: 'none', whatsapp_link: null };
+    },
+    enabled: !!user,
+  });
 
+  // Calculate actual whatsapp link based on request status or owner
+  const isOwner = user && group && user.id === group.owner_id;
+  const requestStatus = requestStatusData?.status || 'none';
+  const resolvedWhatsappLink = group?.whatsapp_link || requestStatusData?.whatsapp_link;
+  
   useEffect(() => {
-    fetchGroupDetails();
-    if (user) {
-      checkRequestStatus();
+    if (group?.whatsapp_link && !waLinkInput) {
+      setWaLinkInput(group.whatsapp_link);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user]);
+  }, [group, waLinkInput]);
 
-  const handleRequestJoin = async () => {
+  const [showJoinNoteModal, setShowJoinNoteModal] = useState(false);
+  const [showProfileAlertModal, setShowProfileAlertModal] = useState(false);
+  const [joinNoteInput, setJoinNoteInput] = useState('');
+
+  const joinMutation = useMutation({
+    mutationFn: (message) => api.post(`/study-groups/${id}/join`, { message }),
+    onSuccess: () => {
+      toast.success('Permintaan bergabung terkirim!');
+      queryClient.invalidateQueries({ queryKey: ['myRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['group', id] });
+      setShowJoinNoteModal(false);
+      setJoinNoteInput('');
+    },
+    onError: (error) => {
+      const serverMsg = error.response?.data?.message;
+      if (serverMsg && serverMsg.includes('Profil belum lengkap')) {
+        setShowProfileAlertModal(true);
+      } else {
+        toast.error(serverMsg || 'Gagal mengirim permintaan');
+      }
+    }
+  });
+
+  const handleRequestJoin = () => {
     if (!user) {
       toast.error('Anda harus login untuk bergabung');
       navigate('/login');
+      return;
+    }
+
+    // Strict validation: Must complete NIM (student_id) and Major (major_id) before joining
+    if (!user.student_id || !user.major_id || !user.major?.name) {
+      setShowProfileAlertModal(true);
       return;
     }
 
@@ -75,37 +102,58 @@ const GroupDetailPage = () => {
       toast.error('Grup sudah penuh');
       return;
     }
-
-    setIsRequesting(true);
-    try {
-      await api.post(`/study-groups/${id}/join`);
-      toast.success('Permintaan bergabung terkirim!');
-      setRequestStatus('pending');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Gagal mengirim permintaan');
-    } finally {
-      setIsRequesting(false);
-    }
+    setShowJoinNoteModal(true);
   };
 
-  const handleSaveWaLink = async (e) => {
+  const handleConfirmJoinWithNote = (e) => {
+    e.preventDefault();
+    joinMutation.mutate(joinNoteInput);
+  };
+
+  const leaveGroupMutation = useMutation({
+    mutationFn: () => api.post(`/study-groups/${id}/leave`),
+    onSuccess: () => {
+      toast.success('Anda telah keluar dari study group');
+      setShowConfirmLeaveModal(false);
+      queryClient.invalidateQueries({ queryKey: ['myRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['group', id] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Gagal keluar dari grup');
+    }
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: (memberId) => api.delete(`/study-groups/${id}/members/${memberId}`),
+    onSuccess: () => {
+      toast.success('Anggota berhasil dikeluarkan dari grup');
+      setConfirmRemoveMemberData({ isOpen: false, memberId: null, memberName: '' });
+      queryClient.invalidateQueries({ queryKey: ['group', id] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Gagal mengeluarkan anggota');
+    }
+  });
+
+  const saveWaMutation = useMutation({
+    mutationFn: (link) => api.put(`/study-groups/${id}`, { whatsapp_link: link }),
+    onSuccess: () => {
+      toast.success('Link WhatsApp grup berhasil disimpan!');
+      queryClient.invalidateQueries({ queryKey: ['group', id] });
+      setShowWaModal(false);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Gagal menyimpan link WhatsApp');
+    }
+  });
+
+  const handleSaveWaLink = (e) => {
     e.preventDefault();
     if (waLinkInput && !waLinkInput.startsWith('http://') && !waLinkInput.startsWith('https://')) {
       toast.error('Format URL tidak valid (harus diawali http:// atau https://)');
       return;
     }
-
-    setIsSavingWa(true);
-    try {
-      await api.put(`/study-groups/${id}`, { whatsapp_link: waLinkInput });
-      setGroup(prev => ({ ...prev, whatsapp_link: waLinkInput }));
-      toast.success('Link WhatsApp grup berhasil disimpan!');
-      setShowWaModal(false);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal menyimpan link WhatsApp');
-    } finally {
-      setIsSavingWa(false);
-    }
+    saveWaMutation.mutate(waLinkInput);
   };
 
   const generateGoogleCalendarLink = () => {
@@ -121,8 +169,8 @@ const GroupDetailPage = () => {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatTime(startDate)}/${formatTime(endDate)}&details=${details}&location=${location}`;
   };
 
-  const getOwnerInitials = (name) => {
-    if (!name) return 'OW';
+  const getInitials = (name) => {
+    if (!name) return 'M';
     const parts = name.split(' ');
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
     return name.substring(0, 2).toUpperCase();
@@ -130,19 +178,18 @@ const GroupDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center font-bold text-gray-500 animate-pulse">
-        Memuat detail grup belajar...
+      <div className="py-10 px-4 md:px-8 max-w-5xl mx-auto w-full">
+        <Skeleton variant="card" className="h-[400px]" />
       </div>
     );
   }
 
   if (!group) return null;
-
-  const isOwner = user && user.id === group.owner_id;
   const currentMembers = group.members_count || 0;
   const capacity = group.max_members || 10;
   const isFull = currentMembers >= capacity;
   const meetingDate = new Date(group.meeting_time);
+  const isExpired = group.expires_at ? new Date(group.expires_at) < new Date() : (meetingDate ? meetingDate < new Date() : false);
   const formattedDate = meetingDate.toLocaleDateString('id-ID', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
@@ -171,7 +218,7 @@ const GroupDetailPage = () => {
             </span>
             <div className="flex items-center gap-2">
               <span className="px-4 py-1.5 bg-brand-yellow text-black font-bold text-xs rounded-full border-2 border-black neo-brutalism uppercase">
-                {group.visibility || 'PUBLIK'}
+                LINTAS KAMPUS
               </span>
               
               {/* Google Calendar Link Button */}
@@ -213,15 +260,29 @@ const GroupDetailPage = () => {
         {/* Owner Profile Header */}
         <div className="bg-brand-yellow/20 p-6 rounded-2xl border-2 border-black flex flex-wrap justify-between items-center gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-brand-purple text-black font-bold text-xl border-2 border-black flex items-center justify-center neo-brutalism">
-              {getOwnerInitials(group.owner?.name)}
+            <div className="w-14 h-14 rounded-full bg-brand-purple text-black font-bold text-xl border-2 border-black flex items-center justify-center neo-brutalism flex-shrink-0">
+              {getInitials(group.owner?.name)}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-bold text-lg text-black">{group.owner?.name || 'Inisiator Grup'}</h4>
                 <span className="px-2.5 py-0.5 bg-black text-white text-xs font-bold rounded-full">Owner</span>
               </div>
-              <div className="text-sm text-gray-600 font-medium">{group.owner?.email || 'Email terverifikasi'}</div>
+              <div className="text-xs text-black font-bold mt-1 flex items-center gap-2 flex-wrap">
+                {group.owner?.university?.name && (
+                  <span className="flex items-center gap-1">
+                    <Building2 size={14} className="text-brand-blue" />
+                    {group.owner.university.name} ({group.owner.university.short_name || 'Kampus'})
+                  </span>
+                )}
+                {group.owner?.major?.name && (
+                  <span className="flex items-center gap-1 text-gray-700">
+                    • <GraduationCap size={14} />
+                    {group.owner.major.name}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 font-semibold mt-0.5">{group.owner?.email}</div>
             </div>
           </div>
           
@@ -238,8 +299,8 @@ const GroupDetailPage = () => {
                 <MessageCircle size={22} /> Kelola Link WhatsApp Group
               </div>
               <div className="text-xs text-black font-bold mt-1">
-                {group.whatsapp_link ? (
-                  <span>Tautan WA aktif: <a href={group.whatsapp_link} target="_blank" rel="noreferrer" className="underline font-extrabold">{group.whatsapp_link}</a></span>
+                {resolvedWhatsappLink ? (
+                  <span>Tautan WA aktif: <a href={resolvedWhatsappLink} target="_blank" rel="noreferrer" className="underline font-extrabold">{resolvedWhatsappLink}</a></span>
                 ) : (
                   <span>Belum ada link WA terpasang. Tambahkan agar peserta yang disetujui dapat bergabung ke grup WhatsApp!</span>
                 )}
@@ -247,12 +308,9 @@ const GroupDetailPage = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button 
-                onClick={() => setShowWaModal(true)}
-                className="px-5 py-2.5 bg-black text-white font-bold rounded-xl border-2 border-black neo-brutalism hover:bg-gray-800 transition-colors text-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Edit3 size={15} /> {group.whatsapp_link ? 'Edit Link WA' : '+ Tambah Link WA'}
-              </button>
+              <Button onClick={() => setShowWaModal(true)} variant="primary" className="text-xs">
+                <Edit3 size={15} /> {resolvedWhatsappLink ? 'Edit Link WA' : '+ Tambah Link WA'}
+              </Button>
             </div>
           </div>
         )}
@@ -267,19 +325,72 @@ const GroupDetailPage = () => {
           </div>
         </div>
 
-        {/* Fasilitas & Benefit */}
-        <div className="space-y-4">
-          <h3 className="font-bold text-black text-xl font-serif">Fasilitas & Keuntungan Bergabung</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-black bg-white neo-brutalism font-bold text-sm">
-              <CheckCircle2 size={20} className="text-brand-green" /> Terbuka Lintas Kampus
-            </div>
-            <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-black bg-white neo-brutalism font-bold text-sm">
-              <CheckCircle2 size={20} className="text-brand-green" /> Gratis Tanpa Biaya
-            </div>
-            <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-black bg-white neo-brutalism font-bold text-sm">
-              <CheckCircle2 size={20} className="text-brand-green" /> Diskusi & Tanya Jawab
-            </div>
+
+        {/* Daftar Mahasiswa & Kampus Terdaftar */}
+        <div className="space-y-4 pt-4 border-t-2 border-black">
+          <div className="flex flex-wrap justify-between items-center gap-2">
+            <h3 className="font-bold text-black text-2xl font-serif flex items-center gap-2">
+              <Users size={24} /> Mahasiswa & Kampus Terdaftar ({group.members?.length || currentMembers} Orang)
+            </h3>
+            {group.members && group.members.length > 0 && (
+              <span className="px-3 py-1 bg-brand-yellow text-black font-bold text-xs rounded-full border-2 border-black neo-brutalism">
+                {new Set(group.members.map(m => m.university?.short_name || m.university?.name).filter(Boolean)).size} Universitas Terhubung
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {group.members && group.members.length > 0 ? (
+              group.members.map((member) => {
+                const isMemberOwner = member.id === group.owner_id;
+                return (
+                  <div 
+                    key={member.id} 
+                    className="p-4 rounded-2xl border-2 border-black bg-brand-bg/50 neo-brutalism flex items-start gap-3"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-brand-purple text-black font-bold text-sm border-2 border-black flex items-center justify-center neo-brutalism flex-shrink-0">
+                      {getInitials(member.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-black text-base truncate">{member.name}</h4>
+                        {isMemberOwner ? (
+                          <span className="px-2 py-0.5 bg-black text-white text-[10px] font-extrabold rounded-full">Owner</span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <span className="px-2 py-0.5 bg-brand-yellow text-black text-[10px] font-extrabold rounded-full border border-black">Anggota</span>
+                            {isOwner && (
+                              <button
+                                onClick={() => setConfirmRemoveMemberData({ isOpen: true, memberId: member.id, memberName: member.name })}
+                                disabled={removeMemberMutation.isPending}
+                                className="px-2 py-0.5 bg-red-500 text-white font-extrabold text-[10px] rounded-full border border-black neo-brutalism hover:bg-red-600 transition-colors flex items-center gap-1 cursor-pointer ml-1"
+                              >
+                                <UserX size={12} /> Keluarkan
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-1 space-y-1 text-xs text-gray-700 font-semibold">
+                        <div className="flex items-center gap-1.5 truncate text-black font-bold">
+                          <Building2 size={14} className="text-brand-blue flex-shrink-0" />
+                          <span className="truncate">{member.university?.name || member.university?.short_name || 'Kampus Belum Diisi'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 truncate">
+                          <GraduationCap size={14} className="text-gray-500 flex-shrink-0" />
+                          <span className="truncate">{member.major?.name || 'Program Studi Belum Diisi'} {member.semester ? `(Semester ${member.semester})` : ''}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-full p-6 text-center border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 font-bold text-sm bg-gray-50">
+                Belum ada informasi anggota tambahan.
+              </div>
+            )}
           </div>
         </div>
 
@@ -319,9 +430,9 @@ const GroupDetailPage = () => {
                 <span className="font-bold text-brand-green flex items-center gap-1.5">
                   <UserCheck size={20} /> Status: Diterima
                 </span>
-                {group.whatsapp_link ? (
+                {resolvedWhatsappLink ? (
                   <a 
-                    href={group.whatsapp_link} 
+                    href={resolvedWhatsappLink} 
                     target="_blank" 
                     rel="noreferrer"
                     className="px-6 py-3 bg-brand-green text-white font-bold rounded-xl border-2 border-black neo-brutalism hover:bg-green-500 transition-colors flex items-center gap-2"
@@ -333,6 +444,13 @@ const GroupDetailPage = () => {
                     Link WA Belum Dimasukkan Owner
                   </span>
                 )}
+                <button 
+                  onClick={() => setShowConfirmLeaveModal(true)}
+                  disabled={leaveGroupMutation.isPending}
+                  className="px-5 py-3 bg-red-500 text-white font-bold text-xs rounded-xl border-2 border-black neo-brutalism hover:bg-red-600 transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  <LogOut size={16} /> Keluar dari Grup
+                </button>
               </div>
             )}
             
@@ -345,13 +463,24 @@ const GroupDetailPage = () => {
 
             {/* If Not Member and Not Owner */}
             {requestStatus === 'none' && !isOwner && (
-              <button
-                onClick={handleRequestJoin}
-                disabled={isFull || isRequesting}
-                className="px-8 py-3.5 bg-black text-white font-bold text-base rounded-xl border-2 border-black neo-brutalism hover:bg-gray-800 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {isRequesting ? 'Mengirim...' : isFull ? 'Grup Penuh' : 'Kirim Permintaan Gabung'}
-              </button>
+              isExpired ? (
+                <span className="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl border-2 border-black neo-brutalism text-xs">
+                  ⚠️ Sesi Pertemuan Telah Lewat
+                </span>
+              ) : isFull ? (
+                <span className="px-6 py-3 bg-red-100 text-red-700 font-bold rounded-xl border-2 border-black neo-brutalism text-xs">
+                  ⚠️ Kapasitas Grup Penuh
+                </span>
+              ) : (
+                <Button
+                  onClick={handleRequestJoin}
+                  disabled={joinMutation.isPending}
+                  variant="primary"
+                  className="px-8 py-3.5 text-base"
+                >
+                  {joinMutation.isPending ? 'Mengirim...' : 'Kirim Permintaan Gabung'}
+                </Button>
+              )
             )}
 
             {/* If Owner */}
@@ -374,53 +503,157 @@ const GroupDetailPage = () => {
       </div>
 
       {/* Modal Edit/Tambah WhatsApp Link */}
-      {showWaModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-4 border-black neo-brutalism p-6 sm:p-8 max-w-md w-full space-y-6">
-            <div>
-              <h3 className="text-2xl font-bold font-serif text-black flex items-center gap-2">
-                <MessageCircle size={24} className="text-brand-green" /> Kelola Link WhatsApp Group
-              </h3>
-              <p className="text-xs font-semibold text-gray-600 mt-1">
-                Masukkan link undangan grup WhatsApp agar anggota yang Anda setujui dapat langsung bergabung!
-              </p>
+      <Modal 
+        isOpen={showWaModal} 
+        onClose={() => setShowWaModal(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <MessageCircle size={24} className="text-brand-green" /> 
+            Kelola Link WhatsApp Group
+          </div>
+        }
+      >
+        <p className="text-xs font-semibold text-gray-600 mb-6">
+          Masukkan link undangan grup WhatsApp agar anggota yang Anda setujui dapat langsung bergabung!
+        </p>
+
+        <form onSubmit={handleSaveWaLink} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
+              Link Undangan WhatsApp (URL)
+            </label>
+            <input
+              type="url"
+              value={waLinkInput}
+              onChange={(e) => setWaLinkInput(e.target.value)}
+              placeholder="https://chat.whatsapp.com/..."
+              className="w-full p-3 rounded-xl border-2 border-black text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-blue neo-brutalism"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" onClick={() => setShowWaModal(false)} variant="secondary" className="text-xs">
+              Batal
+            </Button>
+            <Button type="submit" disabled={saveWaMutation.isPending} variant="success" className="text-xs">
+              {saveWaMutation.isPending ? 'Menyimpan...' : 'Simpan Link WA'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Pesan Catatan Permintaan Bergabung */}
+      <Modal 
+        isOpen={showJoinNoteModal} 
+        onClose={() => setShowJoinNoteModal(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <UserPlus size={24} className="text-brand-blue" /> 
+            Permintaan Bergabung
+          </div>
+        }
+      >
+        <p className="text-xs font-semibold text-gray-600 mb-4">
+          Tulis pesan singkat untuk inisiator grup (opsional) agar ia dapat mengenali motivasi atau topik yang ingin kamu pelajari.
+        </p>
+
+        <form onSubmit={handleConfirmJoinWithNote} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
+              Pesan / Alasan Bergabung (Opsional)
+            </label>
+            <textarea
+              rows={3}
+              value={joinNoteInput}
+              onChange={(e) => setJoinNoteInput(e.target.value)}
+              placeholder="Contoh: Halo, saya ingin belajar topik ini untuk persiapan UTS minggu depan..."
+              className="w-full p-3 rounded-xl border-2 border-black text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-blue neo-brutalism"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" onClick={() => setShowJoinNoteModal(false)} variant="secondary" className="text-xs">
+              Batal
+            </Button>
+            <Button type="submit" disabled={joinMutation.isPending} variant="primary" className="text-xs">
+              {joinMutation.isPending ? 'Mengirim...' : 'Kirim Permintaan'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Peringatan Profil Belum Lengkap (NIM & Prodi Wajib) */}
+      <Modal 
+        isOpen={showProfileAlertModal} 
+        onClose={() => setShowProfileAlertModal(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <AlertCircle size={24} className="text-red-500" /> 
+            Profil Wajib Dilengkapi!
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-gray-800 leading-relaxed">
+            Untuk menjaga keabsahan mahasiswa antar kampus, Anda <strong className="text-red-600">wajib mengisi Jurusan &amp; NIM (Nomor Induk Mahasiswa)</strong> di halaman profil terlebih dahulu sebelum dapat bergabung ke study group.
+          </p>
+
+          <div className="p-4 rounded-xl border-2 border-black bg-brand-yellow/30 text-xs font-bold text-black space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span>📌 Jurusan:</span>
+              <span className={user?.major?.name || user?.major_id ? 'text-green-700 font-extrabold' : 'text-red-600 font-extrabold'}>
+                {user?.major?.name || '❌ Belum Diisi'}
+              </span>
             </div>
+            <div className="flex justify-between items-center">
+              <span>📌 NIM / NPM:</span>
+              <span className={user?.student_id ? 'text-green-700 font-extrabold' : 'text-red-600 font-extrabold'}>
+                {user?.student_id || '❌ Belum Diisi'}
+              </span>
+            </div>
+          </div>
 
-            <form onSubmit={handleSaveWaLink} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-                  Link Undangan WhatsApp (URL)
-                </label>
-                <input
-                  type="url"
-                  value={waLinkInput}
-                  onChange={(e) => setWaLinkInput(e.target.value)}
-                  placeholder="https://chat.whatsapp.com/..."
-                  className="w-full p-3 rounded-xl border-2 border-black text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-blue neo-brutalism"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowWaModal(false)}
-                  className="px-5 py-2.5 bg-gray-200 text-black font-bold text-xs rounded-xl border-2 border-black neo-brutalism hover:bg-gray-300 transition-colors cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingWa}
-                  className="px-6 py-2.5 bg-brand-green text-white font-bold text-xs rounded-xl border-2 border-black neo-brutalism hover:bg-green-500 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {isSavingWa ? 'Menyimpan...' : 'Simpan Link WA'}
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" onClick={() => setShowProfileAlertModal(false)} variant="secondary" className="text-xs">
+              Batal
+            </Button>
+            <Button type="button" onClick={() => navigate('/profile')} variant="primary" className="text-xs">
+              Lengkapi Profil Sekarang →
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
+
+      {/* Confirm Modal: Keluar dari Grup */}
+      <ConfirmModal
+        isOpen={showConfirmLeaveModal}
+        onClose={() => setShowConfirmLeaveModal(false)}
+        onConfirm={() => leaveGroupMutation.mutate()}
+        title="Keluar Dari Group?"
+        message={`Apakah Anda yakin ingin keluar dari study group "${group?.title || ''}"?`}
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        variant="danger"
+        isLoading={leaveGroupMutation.isPending}
+      />
+
+      {/* Confirm Modal: Keluarkan Anggota */}
+      <ConfirmModal
+        isOpen={confirmRemoveMemberData.isOpen}
+        onClose={() => setConfirmRemoveMemberData({ isOpen: false, memberId: null, memberName: '' })}
+        onConfirm={() => {
+          if (confirmRemoveMemberData.memberId) {
+            removeMemberMutation.mutate(confirmRemoveMemberData.memberId);
+          }
+        }}
+        title="Keluarkan Anggota?"
+        message={`Apakah Anda yakin ingin mengeluarkan ${confirmRemoveMemberData.memberName} dari study group ini?`}
+        confirmText="Ya, Keluarkan"
+        cancelText="Batal"
+        variant="danger"
+        isLoading={removeMemberMutation.isPending}
+      />
     </div>
   );
 };

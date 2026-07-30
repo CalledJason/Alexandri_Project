@@ -12,7 +12,6 @@ const createGroupSchema = z.object({
   location: z.string().min(3, { message: "Lokasi wajib diisi" }).max(255),
   meeting_time: z.string().min(1, { message: "Jadwal wajib diisi" }),
   max_members: z.coerce.number().min(2, { message: "Minimal 2 anggota" }).max(20, { message: "Maksimal 20 anggota" }),
-  visibility: z.enum(['public', 'private']),
   expires_at: z.string().min(1, { message: "Batas waktu kedaluwarsa wajib diisi" }),
   duration: z.coerce.number().min(1).max(5),
   tags: z.string().optional(),
@@ -35,7 +34,6 @@ const CreateGroupPage = () => {
       location: '',
       meeting_time: '',
       max_members: 10,
-      visibility: 'public',
       expires_at: '',
       duration: 1,
       tags: ''
@@ -47,7 +45,7 @@ const CreateGroupPage = () => {
       try {
         const res = await api.get('/tags');
         setTags(res.data);
-      } catch (error) {
+      } catch {
         toast.error('Gagal mengambil daftar tag');
       }
     };
@@ -66,6 +64,7 @@ const CreateGroupPage = () => {
 
       const payload = {
         ...data,
+        visibility: 'public',
         meeting_time: mt,
         expires_at: ea,
         tags: data.tags ? [data.tags] : []
@@ -160,17 +159,7 @@ const CreateGroupPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex flex-col gap-2">
-              <label className="font-bold text-gray-800">Visibility</label>
-              <select 
-                {...register("visibility")} 
-                className="w-full p-3 rounded-xl border-2 border-black neo-brutalism focus:outline-none focus:ring-2 focus:ring-brand-blue bg-white"
-              >
-                <option value="public">Publik</option>
-                <option value="private">Privat</option>
-              </select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label className="font-bold text-gray-800">Durasi (Jam)</label>
               <input 
