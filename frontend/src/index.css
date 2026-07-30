@@ -1,111 +1,79 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@theme {
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-serif: 'Plus Jakarta Sans', sans-serif;
+  
+  --color-brand-blue: #3b5bdb;
+  --color-brand-yellow: #fcc419;
+  --color-brand-purple: #c5b3e6;
+  --color-brand-green: #20c997;
+  --color-brand-dark: #1a202c;
+  --color-brand-bg: #fdfaf6; /* Light cream background */
+}
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  * {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  html, body {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    background-color: var(--color-brand-bg);
+    color: var(--color-brand-dark);
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer components {
+  .neo-brutalism {
+    @apply border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform;
+  }
+  
+  .neo-brutalism:hover {
+    @apply translate-x-[-2px] translate-y-[-2px] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .neo-brutalism:active {
+    @apply translate-x-[2px] translate-y-[2px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-full font-semibold border-2 border-black transition-all cursor-pointer inline-flex items-center justify-center;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-full font-semibold border-2 border-black transition-all cursor-pointer inline-flex items-center justify-center bg-black text-white hover:bg-gray-800;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 rounded-full font-semibold border-2 border-black transition-all cursor-pointer inline-flex items-center justify-center bg-white text-black hover:bg-gray-100;
+  }
+  
+  .btn-accent {
+    @apply px-4 py-2 rounded-full font-semibold border-2 border-black transition-all cursor-pointer inline-flex items-center justify-center bg-brand-yellow text-black hover:bg-[#e5b217];
   }
 }
 
-body {
-  margin: 0;
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+.animate-marquee {
   display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+  will-change: transform;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.animate-marquee:hover,
+.animate-marquee:focus-within,
+.animate-marquee:active {
+  animation-play-state: paused;
 }
