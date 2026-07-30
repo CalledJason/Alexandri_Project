@@ -55,7 +55,23 @@ class NotificationController extends Controller
             ]);
 
         return response()->json([
-            'message' => 'All notifications marked as read.',
+            'message' => 'Semua notifikasi telah ditandai dibaca.',
+        ]);
+    }
+
+    /**
+     * Menghapus semua notifikasi milik user.
+     */
+    public function deleteAll(
+        Request $request,
+    ): JsonResponse {
+
+        $request->user()
+            ->notifications()
+            ->delete();
+
+        return response()->json([
+            'message' => 'Semua notifikasi berhasil dibersihkan.',
         ]);
     }
 }

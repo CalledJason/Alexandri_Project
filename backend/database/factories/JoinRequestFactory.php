@@ -18,7 +18,9 @@ class JoinRequestFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => \App\Models\User::factory(),
+            'study_group_id' => \App\Models\StudyGroup::factory(),
+            'status' => 'pending',
         ];
     }
 }

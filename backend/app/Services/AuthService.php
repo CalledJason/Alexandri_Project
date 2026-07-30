@@ -43,7 +43,7 @@ class AuthService
         if (! $university) {
             throw ValidationException::withMessages([
                 'email' => [
-                    'Email domain is not registered.',
+                    'Domain email kampus belum terdaftar di sistem.',
                 ],
             ]);
         }
@@ -77,7 +77,7 @@ class AuthService
         ) {
             throw ValidationException::withMessages([
                 'email' => [
-                    'Invalid credentials.',
+                    'Email atau kata sandi yang Anda masukkan salah.',
                 ],
             ]);
         }

@@ -22,4 +22,12 @@ class Tag extends Model
     {
         return $this->belongsToMany(StudyGroup::class);
     }
+
+    /**
+     * Get all majors associated with this tag.
+     */
+    public function majors(): BelongsToMany
+    {
+        return $this->belongsToMany(Major::class);
+    }
 }

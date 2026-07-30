@@ -31,4 +31,16 @@ class LoginRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid (harus menggunakan email kampus).',
+            'password.required' => 'Kata sandi wajib diisi.',
+        ];
+    }
 }

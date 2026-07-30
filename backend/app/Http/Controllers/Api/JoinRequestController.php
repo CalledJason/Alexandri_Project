@@ -44,6 +44,7 @@ class JoinRequestController extends Controller
         $joinRequest = $this->joinRequestService->requestJoin(
             $request->user(),
             $studyGroup,
+            $request->input('message'),
         );
 
         return response()->json(
@@ -87,6 +88,30 @@ class JoinRequestController extends Controller
 
         return response()->json([
             'message' => 'Join request cancelled successfully.',
+        ]);
+    }
+
+    /**
+     * User keluar dari study group.
+     */
+    public function leaveGroup(Request $request, StudyGroup $studyGroup): JsonResponse
+    {
+        $this->joinRequestService->leaveGroup($studyGroup, $request->user());
+
+        return response()->json([
+            'message' => 'Berhasil keluar dari study group.',
+        ]);
+    }
+
+    /**
+     * Owner mengeluarkan/menghapus anggota dari study group.
+     */
+    public function removeMember(Request $request, StudyGroup $studyGroup, \App\Models\User $user): JsonResponse
+    {
+        $this->joinRequestService->removeMember($studyGroup, $request->user(), $user);
+
+        return response()->json([
+            'message' => 'Anggota berhasil dikeluarkan dari study group.',
         ]);
     }
 }

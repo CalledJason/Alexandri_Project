@@ -24,6 +24,15 @@ class TagSeeder extends Seeder
             'Cyber Security',
             'Networking',
             'Competitive Programming',
+            'Accounting & Finance',
+            'Business & Management',
+            'Psychology & Mental Health',
+            'Medical & Health Sciences',
+            'Engineering & Construction',
+            'Law & Politics',
+            'Communication & Media',
+            'Agriculture & Agribusiness',
+            'Education & Teaching',
         ];
 
         foreach ($tags as $tag) {

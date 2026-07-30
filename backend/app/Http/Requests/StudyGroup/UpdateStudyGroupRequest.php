@@ -90,4 +90,33 @@ class UpdateStudyGroupRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * Custom validator to ensure max_members is not less than current members count.
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $studyGroup = $this->route('study_group');
+            if ($studyGroup && $this->has('max_members')) {
+                $currentMembersCount = $studyGroup->members()->count();
+                if ((int) $this->max_members < $currentMembersCount) {
+                    $validator->errors()->add('max_members', "Kapasitas anggota tidak boleh kurang dari jumlah anggota yang sudah diterima ({$currentMembersCount} orang).");
+                }
+            }
+        });
+    }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'title.max' => 'Judul study group maksimal 100 karakter.',
+            'description.max' => 'Deskripsi study group maksimal 1000 karakter.',
+            'max_members.between' => 'Kapasitas anggota harus antara 2 hingga 20 mahasiswa.',
+            'whatsapp_link.url' => 'Format link WhatsApp harus berupa URL yang valid (https://chat.whatsapp.com/...).',
+        ];
+    }
 }
