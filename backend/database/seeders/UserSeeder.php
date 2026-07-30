@@ -19,7 +19,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Budi Pratama',
                 'email' => 'budi@ui.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '2106789012',
                 'semester' => 4,
                 'univ_short' => 'UI',
@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Siti Nurhaliza',
                 'email' => 'siti@its.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '5025211045',
                 'semester' => 6,
                 'univ_short' => 'ITS',
@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Rian Ardianto',
                 'email' => 'rian@ugm.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '22/498210/TK/54321',
                 'semester' => 2,
                 'univ_short' => 'UGM',
@@ -46,7 +46,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Ayu Lestari',
                 'email' => 'ayu@itb.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '13521098',
                 'semester' => 5,
                 'univ_short' => 'ITB',
@@ -55,7 +55,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Fikri Ramadhan',
                 'email' => 'fikri@unair.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '162112345001',
                 'semester' => 3,
                 'univ_short' => 'UNAIR',
@@ -64,7 +64,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Dewi Anggraini',
                 'email' => 'dewi@ub.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '215150200111012',
                 'semester' => 4,
                 'univ_short' => 'UB',
@@ -73,7 +73,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Eko Prasetyo',
                 'email' => 'eko@telkomuniversity.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '1301213045',
                 'semester' => 5,
                 'univ_short' => 'TELKOM',
@@ -82,7 +82,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Nabila Putri',
                 'email' => 'nabila@binus.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => 'password123',
                 'student_id' => '2501987654',
                 'semester' => 3,
                 'univ_short' => 'BINUS',
