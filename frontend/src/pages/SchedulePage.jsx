@@ -113,37 +113,37 @@ const SchedulePage = () => {
               return (
                 <div 
                   key={item.id} 
-                  className="border-4 border-black rounded-2xl p-6 bg-brand-bg flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:translate-x-1 hover:translate-y-1 transition-all"
+                  className="border-4 border-black rounded-2xl p-4 md:p-6 bg-brand-bg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 hover:translate-x-1 hover:translate-y-1 transition-all"
                 >
-                  <div className="flex items-start gap-6">
+                  <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6 w-full md:w-auto flex-1 min-w-0">
                     {/* Date Card */}
-                    <div className="bg-brand-yellow text-black border-2 border-black rounded-2xl p-4 text-center min-w-[90px] neo-brutalism flex-shrink-0">
+                    <div className="bg-brand-yellow text-black border-2 border-black rounded-2xl p-3 md:p-4 text-center min-w-[90px] neo-brutalism flex-shrink-0">
                       <div className="text-xs font-extrabold uppercase tracking-wider">{dayName}</div>
                       <div className="text-2xl font-bold font-serif my-1">{dayStr}</div>
-                      <div className="text-xs font-bold bg-black text-white rounded-full py-0.5 px-2 mt-1">
+                      <div className="text-[10px] sm:text-xs font-bold bg-black text-white rounded-full py-0.5 px-2 mt-1">
                         {timeStr}
                       </div>
                     </div>
 
                     {/* Information */}
-                    <div>
+                    <div className="flex-1 min-w-0 w-full">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="text-xs font-bold px-3 py-1 bg-brand-blue text-white rounded-full neo-brutalism border-2 border-black">
+                        <span className="text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 bg-brand-blue text-white rounded-full neo-brutalism border-2 border-black">
                           {item.tags?.[0]?.name || 'UMUM'}
                         </span>
                         
                         {isOwner ? (
-                          <span className="text-xs font-bold px-3 py-1 bg-brand-yellow text-black rounded-full neo-brutalism border-2 border-black">
+                          <span className="text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 bg-brand-yellow text-black rounded-full neo-brutalism border-2 border-black">
                             Pembuat / Owner
                           </span>
                         ) : (
-                          <span className="text-xs font-bold px-3 py-1 bg-brand-green text-white rounded-full neo-brutalism border-2 border-black">
+                          <span className="text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 bg-brand-green text-white rounded-full neo-brutalism border-2 border-black">
                             Anggota
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-2xl font-serif font-bold text-black mb-2 leading-tight">
+                      <h3 className="text-xl sm:text-2xl font-serif font-bold text-black mb-2 leading-tight break-words">
                         {item.title}
                       </h3>
 

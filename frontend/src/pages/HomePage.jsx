@@ -103,13 +103,14 @@ const HomePage = () => {
 
       // Check if study group tags intersect with major's related tags
       const matchesTag = groupTags.some(gt => majorTagNames.includes(gt) || gt.includes(majorName));
-      // Check if title or description mentions major or university
-      const matchesText = title.includes(majorName) || desc.includes(majorName) || (univName && title.includes(univName));
+      
+      // Check if title or description mentions major specifically
+      const matchesText = majorName ? (title.includes(majorName) || desc.includes(majorName)) : false;
 
       return matchesTag || matchesText;
     });
 
-    return filtered.length > 0 ? filtered : studyGroups;
+    return filtered;
   })();
 
   return (

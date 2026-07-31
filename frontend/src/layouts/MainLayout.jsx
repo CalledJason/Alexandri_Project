@@ -237,7 +237,7 @@ const MainLayout = () => {
 
                     {/* Notifications Dropdown Modal */}
                     {showNotifDropdown && (
-                      <div className="absolute right-0 mt-3 w-72 sm:w-96 bg-white text-black rounded-2xl border-4 border-black neo-brutalism p-4 z-50 shadow-2xl space-y-3">
+                      <div className="absolute top-full right-0 mt-2 sm:mt-3 w-[280px] sm:w-96 bg-white text-black rounded-2xl border-4 border-black neo-brutalism p-4 z-50 shadow-2xl space-y-3">
                         <div className="flex justify-between items-center border-b-2 border-black pb-2">
                           <h4 className="font-serif font-bold text-base sm:text-lg text-black flex items-center gap-2">
                             <Bell size={18} /> Notifikasi
