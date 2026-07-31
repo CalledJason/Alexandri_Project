@@ -183,7 +183,7 @@ const ProfilePage = () => {
                 {...register("student_id")}
                 type="text"
                 className={`appearance-none rounded-xl relative block w-full px-4 py-3.5 border-2 ${errors.student_id ? 'border-red-500 bg-red-50' : 'border-black bg-white'} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-blue neo-brutalism font-medium`}
-                placeholder="Contoh: 3012410015"
+                placeholder="Contoh: 12345678"
               />
               {errors.student_id && (
                 <p className="mt-1 text-sm text-red-600 font-extrabold flex items-center gap-1">
